@@ -1,0 +1,54 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: cloudflare-pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build Hugo and deploy
+    runs-on: ubuntu-latest
+
+    env:
+      CLOUDFLARE_PROJECT_NAME: ${{ vars.CLOUDFLARE_PROJECT_NAME }}
+      PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: latest
+          extended: true
+
+      - name: Validate configuration
+        run: |
+          if [ -z "$CLOUDFLARE_PROJECT_NAME" ]; then
+            echo "::error::Set the CLOUDFLARE_PROJECT_NAME repository variable in GitHub."
+            exit 1
+          fi
+
+      - name: Build
+        run: |
+          BASE_URL="${PUBLIC_BASE_URL:-https://${CLOUDFLARE_PROJECT_NAME}.pages.dev/}"
+          hugo --gc --minify --baseURL "$BASE_URL"
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy public --project-name=${{ vars.CLOUDFLARE_PROJECT_NAME }} --branch=${{ github.ref_name }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

@@ -1,4 +1,4 @@
-# 📦 Moving Sale Catalog & Admin Panel
+# movingcol Catalog & Admin Panel
 
 A modern, high-performance static catalog site built with **Hugo** and a custom **Node.js/Express** local administration panel. Designed to easily display, prioritize, and manage items for sale with features like drag-and-drop sorting, image carousels with zoom, and WhatsApp product contact triggers.
 
@@ -43,8 +43,8 @@ Make sure you have [Docker](https://www.docker.com/) and [Docker Compose](https:
 ### Running the Project
 1. Clone the repository and navigate into it:
    ```bash
-   git clone https://github.com/davidcarvajalb/movingSale.git
-   cd movingSale
+   git clone https://github.com/davidcarvajalb/movingcol.git
+   cd movingcol
    ```
 
 2. Boot the services using Docker Compose:
@@ -83,11 +83,26 @@ Make sure you have [Docker](https://www.docker.com/) and [Docker Compose](https:
 
 ---
 
-## 🌐 Production Deployment
+## Production Deployment
 
-The catalog is completely serverless and ready for static deployment hosting services like **Netlify** or **Vercel**:
-1. Connect this GitHub repository to your Netlify account.
-2. Configure the build settings:
-   - **Build Command:** `hugo --gc --minify`
-   - **Publish Directory:** `public`
-3. Any changes you make locally and push to GitHub will automatically trigger a production deploy.
+The catalog deploys to **Cloudflare Pages** with **GitHub Actions**. The production URL is:
+
+```text
+https://movingcol.pages.dev/
+```
+
+Configure these GitHub Actions secrets:
+
+```text
+CLOUDFLARE_API_TOKEN
+CLOUDFLARE_ACCOUNT_ID
+```
+
+Configure these GitHub Actions variables:
+
+```text
+CLOUDFLARE_PROJECT_NAME=movingcol
+PUBLIC_BASE_URL=https://movingcol.pages.dev/
+```
+
+Every push to `main` builds Hugo with `hugo --gc --minify` and deploys the generated `public/` directory to Cloudflare Pages.

@@ -1,5 +1,5 @@
 {
-  "name": "movingsale-admin",
+  "name": "movingcol-admin",
   "version": "1.0.0",
   "description": "Panel de administración local para catálogo estático en Hugo",
   "main": "admin-server.js",
