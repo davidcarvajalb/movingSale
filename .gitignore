@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Local environment
+.env
+.env.*
+
 # Hugo build outputs
 public/
 resources/_gen/
@@ -9,3 +13,6 @@ resources/_gen/
 # Temporary upload files
 tmp-uploads/*
 !tmp-uploads/.gitkeep
+
+# Local commit message scratch files
+.git-commit-msg.txt

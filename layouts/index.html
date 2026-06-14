@@ -64,7 +64,7 @@
             <a href="{{ .RelPermalink }}" class="product-card-link">
               <div class="product-card-image-wrapper">
                 {{ if .Params.sold }}
-                  <span class="sold-badge">Sold to {{ .Params.buyer }}</span>
+                  <span class="sold-badge">Sold</span>
                 {{ end }}
                 {{ if $firstImage }}
                   {{ $thumb := $firstImage.Fill "500x500 q85" }}

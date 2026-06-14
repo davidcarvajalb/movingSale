@@ -12,12 +12,12 @@ A modern, high-performance static catalog site built with **Hugo** and a custom 
   - Drag products in the list to reorder them instantly on the catalog page.
   - Drag product images to rearrange their sequence in the gallery.
 - **Sequential Image Renaming:** Uploaded and edited images are automatically cleaned up and renamed (e.g. `foto-1.jpg`, `foto-2.jpg`) sequentially.
-- **Mark as Sold:** Lock sold items from the edit menu. Prompts for a **Buyer Name** and **Sold Price** (pre-populated with the listing price).
+- **Mark as Sold:** Lock sold items from the edit menu without publishing buyer or final sale details.
 - **Grayscale Dimming:** Sold items are automatically greyed out in the administrator list to highlight available inventory.
 
 ### 🎨 Visitor Catalog (`http://localhost:1313`)
 - **Grid Layout & Filters:** Modern grid layout with real-time text search and dynamic filter buttons by category.
-- **Grayscale Dimming on Sold Items:** Sold products are automatically greyed out and overlayed with a `"Sold to [Buyer]"` badge.
+- **Grayscale Dimming on Sold Items:** Sold products are automatically greyed out and overlayed with a `"Sold"` badge.
 - **Product Gallery Carousel:** Responsive carousel navigation (with touch swipe support for mobile devices).
 - **Fullscreen Lightbox Zoom:** Click on any photo to open a fullscreen blur-backdrop lightbox. Supports zoom-in (2.2x), mouse cursor panning, touch swipes, and synchronized thumbnail previews.
 - **WhatsApp Contact Triggers:** Direct contact button that pre-populates a message with the product link and price (hidden automatically on sold items).
@@ -96,6 +96,7 @@ Configure these GitHub Actions secrets:
 ```text
 CLOUDFLARE_API_TOKEN
 CLOUDFLARE_ACCOUNT_ID
+HUGO_WHATSAPP_NUMBER
 ```
 
 Configure these GitHub Actions variables:
@@ -106,3 +107,44 @@ PUBLIC_BASE_URL=https://movingcol.pages.dev/
 ```
 
 Every push to `main` builds Hugo with `hugo --gc --minify` and deploys the generated `public/` directory to Cloudflare Pages.
+
+### Daily update workflow
+
+1. Start the local tools:
+   ```bash
+   docker compose up
+   ```
+
+   To enable WhatsApp links locally, create an uncommitted `.env` file:
+   ```text
+   HUGO_WHATSAPP_NUMBER=<country-code-and-number-without-plus-or-spaces>
+   ```
+
+2. Edit products in the local admin panel:
+   ```text
+   http://localhost:3000
+   ```
+
+3. Preview the catalog:
+   ```text
+   http://localhost:1313
+   ```
+
+4. Commit and push the catalog changes:
+   ```bash
+   git add content/products
+   git commit -m "chore(catalog): update products"
+   git push origin main
+   ```
+
+5. GitHub Actions will deploy the updated static site to Cloudflare Pages automatically.
+
+### Manual production build
+
+To regenerate the static files for a manual Cloudflare upload:
+
+```bash
+HUGO_WHATSAPP_NUMBER=<country-code-and-number-without-plus-or-spaces> docker compose run --rm hugo --gc --minify --baseURL https://movingcol.pages.dev/
+```
+
+Upload the generated `public/` directory to Cloudflare Pages. Do not commit `public/`; it is generated output.

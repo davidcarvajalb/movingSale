@@ -104,9 +104,7 @@ app.get('/api/products', (req, res) => {
             category: category,
             weight: parseInt(attributes.weight) || 100,
             images: images,
-            sold: attributes.sold === 'true' || attributes.sold === true,
-            buyer: attributes.buyer || '',
-            soldPrice: parseFloat(attributes.soldPrice) || 0
+            sold: attributes.sold === 'true' || attributes.sold === true
           });
         }
       }
@@ -173,8 +171,6 @@ draft: false
 categories: ["${catStr.replace(/"/g, '\\"')}"]
 weight: ${weightNum}
 sold: false
-buyer: ""
-soldPrice: 0
 ---
 ${description || ''}
 `;
@@ -294,10 +290,9 @@ app.post('/api/products/:oldSlug', upload.array('photos', 10), (req, res) => {
       });
     }
 
-    // 5. Read original creation date, sold status and buyer if possible
+    // 5. Read original creation date and sold status if possible
     let dateStr = new Date().toISOString();
     let originalSold = false;
-    let originalBuyer = '';
     const mdPath = path.join(productDir, 'index.md');
     if (fs.existsSync(mdPath)) {
       const originalContent = fs.readFileSync(mdPath, 'utf-8');
@@ -306,8 +301,6 @@ app.post('/api/products/:oldSlug', upload.array('photos', 10), (req, res) => {
         dateStr = attributes.date;
       }
       originalSold = attributes.sold === 'true' || attributes.sold === true;
-      originalBuyer = attributes.buyer || '';
-      originalSoldPrice = parseFloat(attributes.soldPrice) || 0;
     }
 
     // 6. Write updated Markdown
@@ -321,8 +314,6 @@ draft: false
 categories: ["${catStr.replace(/"/g, '\\"')}"]
 weight: ${weightNum}
 sold: ${originalSold}
-buyer: "${originalBuyer.replace(/"/g, '\\"')}"
-soldPrice: ${originalSoldPrice}
 ---
 ${description || ''}
 `;
@@ -338,7 +329,7 @@ ${description || ''}
 app.post('/api/products/:slug/status', (req, res) => {
   try {
     const slug = req.params.slug;
-    const { sold, buyer, soldPrice } = req.body;
+    const { sold } = req.body;
     const productDir = path.join(contentDir, slug);
     const mdPath = path.join(productDir, 'index.md');
 
@@ -351,8 +342,6 @@ app.post('/api/products/:slug/status', (req, res) => {
 
     // Update attributes
     const soldStatus = sold === true || sold === 'true';
-    const buyerName = soldStatus ? (buyer || '') : '';
-    const soldPriceVal = soldStatus ? (parseFloat(soldPrice) || 0) : 0;
 
     // Parse categories cleanly
     let categoriesStr = attributes.categories || '';
@@ -369,14 +358,12 @@ draft: false
 categories: ["${categoriesStr.replace(/"/g, '\\"')}"]
 weight: ${parseInt(attributes.weight) || 100}
 sold: ${soldStatus}
-buyer: "${buyerName.replace(/"/g, '\\"')}"
-soldPrice: ${soldPriceVal}
 ---
 ${body.trim()}
 `;
 
     fs.writeFileSync(mdPath, markdownContent, 'utf-8');
-    res.json({ success: true, sold: soldStatus, buyer: buyerName, soldPrice: soldPriceVal });
+    res.json({ success: true, sold: soldStatus });
   } catch (error) {
     console.error('Error updating status:', error);
     res.status(500).json({ error: 'Error updating product status' });
@@ -409,8 +396,6 @@ app.post('/api/reorder-products', (req, res) => {
         }
         
         const soldVal = attributes.sold === 'true' || attributes.sold === true;
-        const buyerVal = attributes.buyer || '';
-        const soldPriceVal = parseFloat(attributes.soldPrice) || 0;
         
         const markdownContent = `---
 title: "${titleVal.replace(/"/g, '\\"')}"
@@ -420,8 +405,6 @@ draft: false
 categories: ["${category.replace(/"/g, '\\"')}"]
 weight: ${weightNum}
 sold: ${soldVal}
-buyer: "${buyerVal.replace(/"/g, '\\"')}"
-soldPrice: ${soldPriceVal}
 ---
 ${body.trim()}
 `;

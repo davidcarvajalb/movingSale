@@ -3,7 +3,5 @@ languageCode = 'en-us'
 title = 'movingcol'
 
 [params]
-  # Configure your WhatsApp number here (with country code, without + or spaces)
-  whatsappNumber = '5491122334455'
   currencySymbol = '$'
   description = 'Online catalog of products for sale.'

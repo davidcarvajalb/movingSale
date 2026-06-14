@@ -26,4 +26,4 @@ Follow the existing Conventional Commit style, such as `feat(catalog): add sold 
 
 ## Security & Configuration Tips
 
-Configure public site values in `hugo.toml`, including `baseURL`, `params.whatsappNumber`, and display currency. Do not commit real buyer-sensitive data unless it is intended to be published in the static catalog.
+Configure public site values in `hugo.toml`, including `baseURL` and display currency. Keep private contact values such as the WhatsApp number in build-time environment variables or GitHub Actions secrets. Do not commit real buyer-sensitive data unless it is intended to be published in the static catalog.

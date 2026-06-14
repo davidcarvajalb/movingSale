@@ -608,28 +608,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <!-- Sold Modal Popup -->
-  <div id="sold-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-      <h3>Mark Item as Sold</h3>
-      <form id="sold-form">
-        <input type="hidden" id="sold-product-slug">
-        <div class="form-group" style="margin-top: 1rem;">
-          <label for="buyer-name">Buyer Name *</label>
-          <input type="text" id="buyer-name" required placeholder="e.g. John Doe" style="width: 100%; box-sizing: border-box;">
-        </div>
-        <div class="form-group" style="margin-top: 1rem;">
-          <label for="sold-price">Sold Price ($) *</label>
-          <input type="number" id="sold-price" name="sold-price" step="0.01" min="0" required placeholder="e.g. 400.00" style="width: 100%; box-sizing: border-box;">
-        </div>
-        <div class="modal-buttons" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-          <button type="submit" class="btn" style="background-color: var(--danger);">Confirm Sold</button>
-          <button type="button" class="btn" id="close-sold-modal" style="background-color: var(--text-muted); width: 100%;">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <script>
     const form = document.getElementById('product-form');
     const dropzone = document.getElementById('dropzone');
@@ -753,7 +731,7 @@
           productItem.innerHTML = `
             <img class="product-thumb" src="${thumbnailSrc}" alt="${p.title}">
             <div class="product-info">
-              <h3>${p.title}${isSold ? ` <span style="color: #64748b; font-size: 0.8rem; font-weight: 700;">[SOLD to ${p.buyer || 'Unknown'} for $${p.soldPrice ? p.soldPrice.toFixed(2) : '0.00'}]</span>` : ''}</h3>
+              <h3>${p.title}${isSold ? ' <span style="color: #64748b; font-size: 0.8rem; font-weight: 700;">[SOLD]</span>' : ''}</h3>
               <p class="price">$${p.price.toFixed(2)}</p>
               <p class="desc">${p.category ? `[${p.category}] ` : ''}${p.description || 'No description'}</p>
             </div>
@@ -931,7 +909,7 @@
       } else {
         statusBtn.textContent = 'Mark as Sold';
         statusBtn.style.backgroundColor = 'var(--danger, #ef4444)';
-        statusBtn.onclick = () => openSoldModal(slug);
+        statusBtn.onclick = () => toggleProductStatus(slug, true);
       }
 
       // Scroll to form card
@@ -1134,71 +1112,10 @@
       }
     });
 
-    // Global functions for sold state
-    window.openSoldModal = function(slug) {
-      document.getElementById('sold-product-slug').value = slug;
-      document.getElementById('buyer-name').value = '';
-      
-      const product = allProducts.find(p => p.slug === slug);
-      if (product) {
-        document.getElementById('sold-price').value = product.price;
-      } else {
-        document.getElementById('sold-price').value = '';
-      }
-
-      const modal = document.getElementById('sold-modal');
-      modal.style.display = 'flex';
-      // Force reflow
-      modal.offsetHeight;
-      modal.classList.add('active');
-    };
-
-    window.closeSoldModal = function() {
-      const modal = document.getElementById('sold-modal');
-      modal.classList.remove('active');
-      setTimeout(() => {
-        if (!modal.classList.contains('active')) {
-          modal.style.display = 'none';
-        }
-      }, 300);
-    };
-
-    document.getElementById('close-sold-modal').addEventListener('click', window.closeSoldModal);
-
-    document.getElementById('sold-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const slug = document.getElementById('sold-product-slug').value;
-      const buyer = document.getElementById('buyer-name').value;
-      const soldPrice = parseFloat(document.getElementById('sold-price').value) || 0;
-
-      try {
-        const response = await fetch(`/api/products/${slug}/status`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ sold: true, buyer: buyer, soldPrice: soldPrice })
-        });
-        const result = await response.json();
-        if (result.success) {
-          showToast('Product marked as sold!');
-          window.closeSoldModal();
-          await loadProducts();
-          if (editMode && editSlug === slug) {
-            startEdit(slug);
-          } else {
-            cancelEdit();
-          }
-        } else {
-          showToast(result.error || 'Error marking as sold', 'error');
-        }
-      } catch (error) {
-        console.error('Error updating status:', error);
-        showToast('Connection error', 'error');
-      }
-    });
-
     window.toggleProductStatus = async function(slug, isSold) {
+      if (isSold === true) {
+        if (!confirm('Are you sure you want to mark this item as sold?')) return;
+      }
       if (isSold === false) {
         if (!confirm('Are you sure you want to mark this item as available again?')) return;
       }
@@ -1209,7 +1126,7 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ sold: isSold, buyer: '', soldPrice: 0 })
+          body: JSON.stringify({ sold: isSold })
         });
         const result = await response.json();
         if (result.success) {

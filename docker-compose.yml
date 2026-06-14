@@ -12,6 +12,7 @@ services:
     environment:
       - HUGO_BIND=0.0.0.0
       - HUGO_PORT=1313
+      - HUGO_WHATSAPP_NUMBER=${HUGO_WHATSAPP_NUMBER:-}
 
   admin:
     image: node:20-alpine
