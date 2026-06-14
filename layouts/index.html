@@ -1,0 +1,167 @@
+{{ define "main" }}
+
+<div class="index-container">
+  <!-- Hero / Intro Section -->
+  <section class="hero-section">
+    <h1>Item Catalog</h1>
+    <p>Browse the list of available items. Click on any item to view more photos and details. If you're interested, send me a message on WhatsApp.</p>
+    
+    <!-- Real-time client-side search -->
+    <div class="search-bar-container">
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="product-search" placeholder="Search products by title or description..." aria-label="Search products">
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Grid -->
+  <section class="products-section">
+    <!-- Sort products by Weight ascending, Date descending -->
+    {{ $productos := (where .Site.RegularPages "Section" "productos").ByWeight }}
+    
+    {{ if eq (len $productos) 0 }}
+      <div class="empty-catalog">
+        <div class="empty-icon">📦</div>
+        <h2>Catalog is empty for now</h2>
+        <p>No products have been added to the catalog yet. Use the local admin panel to add items.</p>
+      </div>
+    {{ else }}
+      <!-- Extract Unique Categories dynamically -->
+      {{ $categories := slice }}
+      {{ range $productos }}
+        {{ with .Params.categories }}
+          {{ range . }}
+            {{ if ne . "" }}
+              {{ $categories = $categories | append . }}
+            {{ end }}
+          {{ end }}
+        {{ end }}
+      {{ end }}
+      {{ $uniqueCategories := uniq $categories }}
+
+      <!-- Render Category Filters -->
+      {{ if gt (len $uniqueCategories) 0 }}
+        <div class="category-filters-container">
+          <button class="filter-btn active" data-filter="all">All</button>
+          {{ range $uniqueCategories }}
+            <button class="filter-btn" data-filter="{{ . | lower }}">{{ . }}</button>
+          {{ end }}
+        </div>
+      {{ end }}
+
+      <div class="products-grid" id="products-grid">
+        {{ range $productos }}
+          {{ $images := .Resources.ByType "image" }}
+          {{ $firstImage := index $images 0 }}
+          
+          {{ $catStr := "" }}
+          {{ with .Params.categories }}
+            {{ $catStr = delimit . " " }}
+          {{ end }}
+          
+          <article class="product-card {{ if .Params.sold }}sold{{ end }}" data-title="{{ .Title | lower }}" data-desc="{{ .Plain | lower }}" data-category="{{ $catStr | lower }}">
+            <a href="{{ .RelPermalink }}" class="product-card-link">
+              <div class="product-card-image-wrapper">
+                {{ if .Params.sold }}
+                  <span class="sold-badge">Sold to {{ .Params.buyer }}</span>
+                {{ end }}
+                {{ if $firstImage }}
+                  {{ $thumb := $firstImage.Fill "500x500 q85" }}
+                  <img src="{{ $thumb.RelPermalink }}" alt="{{ .Title }}" class="product-card-image" loading="lazy">
+                {{ else }}
+                  <div class="no-image-placeholder">
+                    <span>No image available</span>
+                  </div>
+                {{ end }}
+                <span class="price-tag">{{ site.Params.currencySymbol }}{{ .Params.price }}</span>
+              </div>
+              
+              <div class="product-card-content">
+                {{ with .Params.categories }}
+                  <span class="product-card-category">{{ index . 0 }}</span>
+                {{ end }}
+                <h2 class="product-title">{{ .Title }}</h2>
+                <p class="product-description-snippet">{{ .Summary | default .Description }}</p>
+                <div class="product-card-footer">
+                  <span class="view-details-btn">View Details &rarr;</span>
+                </div>
+              </div>
+            </a>
+          </article>
+        {{ end }}
+      </div>
+
+      <!-- No search results message -->
+      <div id="no-results" class="empty-catalog" style="display: none;">
+        <div class="empty-icon">🔎</div>
+        <h2>No results found</h2>
+        <p>No products match your search. Try using different keywords.</p>
+      </div>
+    {{ end }}
+  </section>
+</div>
+
+{{ end }}
+
+{{ define "scripts" }}
+<script>
+  // Advanced search + category filter combination logic
+  const searchInput = document.getElementById('product-search');
+  const productsGrid = document.getElementById('products-grid');
+  const noResults = document.getElementById('no-results');
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  
+  let currentCategory = 'all';
+  
+  if (productsGrid) {
+    const cards = productsGrid.querySelectorAll('.product-card');
+    
+    function filterProducts() {
+      const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      let visibleCount = 0;
+      
+      cards.forEach(card => {
+        const title = card.getAttribute('data-title');
+        const desc = card.getAttribute('data-desc');
+        const cardCategoryStr = card.getAttribute('data-category') || '';
+        const cardCategories = cardCategoryStr.split(' ').map(c => c.trim()).filter(c => c);
+        
+        const matchesSearch = title.includes(query) || desc.includes(query);
+        const matchesCategory = currentCategory === 'all' || cardCategories.includes(currentCategory);
+        
+        if (matchesSearch && matchesCategory) {
+          card.style.display = 'block';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      if (visibleCount === 0) {
+        productsGrid.style.display = 'none';
+        noResults.style.display = 'block';
+      } else {
+        productsGrid.style.display = 'grid';
+        noResults.style.display = 'none';
+      }
+    }
+    
+    if (searchInput) {
+      searchInput.addEventListener('input', filterProducts);
+    }
+    
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Toggle active button
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update category and apply filters
+        currentCategory = btn.getAttribute('data-filter').toLowerCase().trim();
+        filterProducts();
+      });
+    });
+  }
+</script>
+{{ end }}

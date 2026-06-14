@@ -1,0 +1,9 @@
+baseURL = 'https://catalogo-moving-sale.netlify.app/'
+languageCode = 'en-us'
+title = 'Moving Sale'
+
+[params]
+  # Configure your WhatsApp number here (with country code, without + or spaces)
+  whatsappNumber = '5491122334455'
+  currencySymbol = '$'
+  description = 'Online catalog of products for sale. Moving sale, everything must go!'

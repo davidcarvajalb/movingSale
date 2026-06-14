@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode | default "en" }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ block "title" . }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+  <meta property="og:title" content="{{ block "og_title" . }}{{ .Title }} | {{ .Site.Title }}{{ end }}">
+  <meta property="og:description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ .Permalink }}">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  {{ $sass := resources.Get "scss/styles.scss" }}
+  {{ $style := $sass | toCSS | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $style.RelPermalink }}" integrity="{{ $style.Data.Integrity }}">
+</head>
+<body>
+  
+  <!-- Main Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <span class="logo-accent">📦</span> {{ .Site.Title }}
+      </a>
+      <p class="tagline">Everything must go! Check availability and let me know.</p>
+    </div>
+  </header>
+
+  <!-- Main Content Block -->
+  <main class="site-main">
+    {{ block "main" . }}{{ end }}
+  </main>
+
+  <!-- Main Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <p>&copy; {{ now.Format "2006" }} - {{ .Site.Title }}</p>
+      <p class="footer-note">Created for local sale and close friends.</p>
+    </div>
+  </footer>
+
+  {{ block "scripts" . }}{{ end }}
+</body>
+</html>

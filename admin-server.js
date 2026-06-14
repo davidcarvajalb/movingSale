@@ -1,0 +1,462 @@
+const express = require('express');
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Ensure directories exist
+const contentDir = path.join(__dirname, 'content', 'productos');
+const tmpDir = path.join(__dirname, 'tmp-uploads');
+fs.mkdirSync(contentDir, { recursive: true });
+fs.mkdirSync(tmpDir, { recursive: true });
+
+// Multer configuration for temporary file upload
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, tmpDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
+});
+const upload = multer({ storage: storage });
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static admin page
+app.use(express.static(path.join(__dirname, 'views')));
+// Serve product content folder statically for thumbnails
+app.use('/content/productos', express.static(path.join(__dirname, 'content', 'productos')));
+
+// Helper to slugify titles
+function slugify(text) {
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-');
+}
+
+// Parse Markdown Front Matter (very simple YAML parser for our specific use case)
+function parseFrontMatter(content) {
+  const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---\r?\n([\s\S]*)$/);
+  if (!match) return { attributes: {}, body: content };
+
+  const yamlBlock = match[1];
+  const body = match[2];
+  const attributes = {};
+
+  yamlBlock.split('\n').forEach(line => {
+    const parts = line.split(':');
+    if (parts.length >= 2) {
+      const key = parts[0].trim();
+      const val = parts.slice(1).join(':').trim();
+      // Remove quotes if present
+      attributes[key] = val.replace(/^["']|["']$/g, '');
+    }
+  });
+
+  return { attributes, body };
+}
+
+// API: Get all products
+app.get('/api/productos', (req, res) => {
+  try {
+    if (!fs.existsSync(contentDir)) {
+      return res.json([]);
+    }
+
+    const folders = fs.readdirSync(contentDir);
+    const productos = [];
+
+    folders.forEach(folder => {
+      const folderPath = path.join(contentDir, folder);
+      if (fs.statSync(folderPath).isDirectory()) {
+        const mdPath = path.join(folderPath, 'index.md');
+        if (fs.existsSync(mdPath)) {
+          const content = fs.readFileSync(mdPath, 'utf-8');
+          const { attributes, body } = parseFrontMatter(content);
+          
+          // Get images in the same folder
+          const files = fs.readdirSync(folderPath);
+          const images = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
+
+          let category = attributes.categories || "";
+          if (category.startsWith('[') && category.endsWith(']')) {
+            category = category.slice(1, -1).replace(/^["']|["']$/g, '').trim();
+          }
+
+          productos.push({
+            slug: folder,
+            title: attributes.title || folder,
+            price: parseFloat(attributes.price) || 0,
+            date: attributes.date || '',
+            description: body.trim(),
+            category: category,
+            weight: parseInt(attributes.weight) || 100,
+            images: images,
+            sold: attributes.sold === 'true' || attributes.sold === true,
+            buyer: attributes.buyer || '',
+            soldPrice: parseFloat(attributes.soldPrice) || 0
+          });
+        }
+      }
+    });
+
+    // Sort by date descending
+    productos.sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.json(productos);
+  } catch (error) {
+    console.error('Error reading products:', error);
+    res.status(500).json({ error: 'Error getting products' });
+  }
+});
+
+// API: Create new product
+app.post('/api/productos', upload.array('photos', 10), (req, res) => {
+  try {
+    const { title, price, description, category, weight } = req.body;
+    if (!title || !price) {
+      return res.status(400).json({ error: 'Title and price are required.' });
+    }
+
+    const slug = slugify(title);
+    const productDir = path.join(contentDir, slug);
+
+    if (fs.existsSync(productDir)) {
+      return res.status(400).json({ error: 'A product with a similar title already exists.' });
+    }
+
+    // Create product directory
+    fs.mkdirSync(productDir, { recursive: true });
+
+    // Move uploaded files to the product directory
+    const movedImages = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file, index) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        // Give clean, sequential filenames: foto-1.jpg, foto-2.jpg
+        const newFileName = `foto-${index + 1}${ext}`;
+        const newPath = path.join(productDir, newFileName);
+        fs.renameSync(file.path, newPath);
+        movedImages.push(newFileName);
+      });
+    }
+
+    // Clean up any remaining temp files just in case
+    if (req.files) {
+      req.files.forEach(file => {
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+      });
+    }
+
+    // Generate Markdown file content
+    const dateStr = new Date().toISOString();
+    const weightNum = parseInt(weight) || 100;
+    const catStr = category || '';
+    const markdownContent = `---
+title: "${title.replace(/"/g, '\\"')}"
+price: ${parseFloat(price)}
+date: ${dateStr}
+draft: false
+categories: ["${catStr.replace(/"/g, '\\"')}"]
+weight: ${weightNum}
+sold: false
+buyer: ""
+soldPrice: 0
+---
+${description || ''}
+`;
+
+    fs.writeFileSync(path.join(productDir, 'index.md'), markdownContent, 'utf-8');
+
+    res.status(201).json({ success: true, slug: slug });
+  } catch (error) {
+    console.error('Error creating product:', error);
+    res.status(500).json({ error: 'Internal server error while creating product' });
+  }
+});
+
+// API: Update product
+app.post('/api/productos/:oldSlug', upload.array('photos', 10), (req, res) => {
+  try {
+    const oldSlug = req.params.oldSlug;
+    const oldProductDir = path.join(contentDir, oldSlug);
+
+    if (!fs.existsSync(oldProductDir)) {
+      return res.status(404).json({ error: 'Product does not exist.' });
+    }
+
+    const { title, price, description, category, weight, deletePhotos, photoOrder } = req.body;
+    if (!title || !price) {
+      return res.status(400).json({ error: 'Title and price are required.' });
+    }
+
+    const newSlug = slugify(title);
+    let productDir = oldProductDir;
+
+    // 1. Handle directory rename if title changes
+    if (newSlug !== oldSlug) {
+      const newProductDir = path.join(contentDir, newSlug);
+      if (fs.existsSync(newProductDir)) {
+        return res.status(400).json({ error: 'A product with a similar title already exists.' });
+      }
+      fs.renameSync(oldProductDir, newProductDir);
+      productDir = newProductDir;
+    }
+
+    // 2. Handle photo deletions
+    if (deletePhotos) {
+      let photosToDelete = [];
+      try {
+        photosToDelete = JSON.parse(deletePhotos);
+      } catch (e) {
+        photosToDelete = Array.isArray(deletePhotos) ? deletePhotos : [deletePhotos];
+      }
+
+      photosToDelete.forEach(photoName => {
+        const photoPath = path.join(productDir, photoName);
+        if (fs.existsSync(photoPath)) {
+          fs.unlinkSync(photoPath);
+        }
+      });
+    }
+
+    // 3. Handle photo reordering & renaming
+    let files = fs.readdirSync(productDir);
+    let remainingImages = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
+
+    let orderList = [];
+    if (photoOrder) {
+      try {
+        orderList = JSON.parse(photoOrder);
+      } catch (e) {
+        orderList = Array.isArray(photoOrder) ? photoOrder : [photoOrder];
+      }
+    }
+
+    // Sort remaining images based on photoOrder, then append others
+    let sortedRemaining = [];
+    orderList.forEach(photoName => {
+      if (remainingImages.includes(photoName)) {
+        sortedRemaining.push(photoName);
+      }
+    });
+    remainingImages.forEach(photoName => {
+      if (!sortedRemaining.includes(photoName)) {
+        sortedRemaining.push(photoName);
+      }
+    });
+
+    const tempPrefix = 'temp_reorder_' + Date.now() + '_';
+    const tempRenamed = [];
+    
+    sortedRemaining.forEach((image, index) => {
+      const ext = path.extname(image);
+      const tempName = `${tempPrefix}${index + 1}${ext}`;
+      fs.renameSync(path.join(productDir, image), path.join(productDir, tempName));
+      tempRenamed.push({ tempName, ext });
+    });
+
+    tempRenamed.forEach((item, index) => {
+      const finalName = `foto-${index + 1}${item.ext}`;
+      fs.renameSync(path.join(productDir, item.tempName), path.join(productDir, finalName));
+    });
+
+    // 4. Move new uploaded photos sequentially
+    let finalImageCount = tempRenamed.length;
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file, index) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const newFileName = `foto-${finalImageCount + index + 1}${ext}`;
+        const newPath = path.join(productDir, newFileName);
+        fs.renameSync(file.path, newPath);
+      });
+    }
+
+    // Clean up temp files in upload folder
+    if (req.files) {
+      req.files.forEach(file => {
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+      });
+    }
+
+    // 5. Read original creation date, sold status and buyer if possible
+    let dateStr = new Date().toISOString();
+    let originalSold = false;
+    let originalBuyer = '';
+    const mdPath = path.join(productDir, 'index.md');
+    if (fs.existsSync(mdPath)) {
+      const originalContent = fs.readFileSync(mdPath, 'utf-8');
+      const { attributes } = parseFrontMatter(originalContent);
+      if (attributes.date) {
+        dateStr = attributes.date;
+      }
+      originalSold = attributes.sold === 'true' || attributes.sold === true;
+      originalBuyer = attributes.buyer || '';
+      originalSoldPrice = parseFloat(attributes.soldPrice) || 0;
+    }
+
+    // 6. Write updated Markdown
+    const weightNum = parseInt(weight) || 100;
+    const catStr = category || '';
+    const markdownContent = `---
+title: "${title.replace(/"/g, '\\"')}"
+price: ${parseFloat(price)}
+date: ${dateStr}
+draft: false
+categories: ["${catStr.replace(/"/g, '\\"')}"]
+weight: ${weightNum}
+sold: ${originalSold}
+buyer: "${originalBuyer.replace(/"/g, '\\"')}"
+soldPrice: ${originalSoldPrice}
+---
+${description || ''}
+`;
+
+    fs.writeFileSync(mdPath, markdownContent, 'utf-8');
+
+    res.json({ success: true, slug: newSlug });
+  } catch (error) {
+  }
+});
+
+// API: Update product status (sold/available)
+app.post('/api/productos/:slug/status', (req, res) => {
+  try {
+    const slug = req.params.slug;
+    const { sold, buyer, soldPrice } = req.body;
+    const productDir = path.join(contentDir, slug);
+    const mdPath = path.join(productDir, 'index.md');
+
+    if (!fs.existsSync(mdPath)) {
+      return res.status(404).json({ error: 'Product does not exist.' });
+    }
+
+    const content = fs.readFileSync(mdPath, 'utf-8');
+    const { attributes, body } = parseFrontMatter(content);
+
+    // Update attributes
+    const soldStatus = sold === true || sold === 'true';
+    const buyerName = soldStatus ? (buyer || '') : '';
+    const soldPriceVal = soldStatus ? (parseFloat(soldPrice) || 0) : 0;
+
+    // Parse categories cleanly
+    let categoriesStr = attributes.categories || '';
+    if (categoriesStr.startsWith('[') && categoriesStr.endsWith(']')) {
+      categoriesStr = categoriesStr.slice(1, -1).replace(/^["']|["']$/g, '').trim();
+    }
+
+    // Write updated Markdown
+    const markdownContent = `---
+title: "${(attributes.title || slug).replace(/"/g, '\\"')}"
+price: ${parseFloat(attributes.price) || 0}
+date: ${attributes.date || new Date().toISOString()}
+draft: false
+categories: ["${categoriesStr.replace(/"/g, '\\"')}"]
+weight: ${parseInt(attributes.weight) || 100}
+sold: ${soldStatus}
+buyer: "${buyerName.replace(/"/g, '\\"')}"
+soldPrice: ${soldPriceVal}
+---
+${body.trim()}
+`;
+
+    fs.writeFileSync(mdPath, markdownContent, 'utf-8');
+    res.json({ success: true, sold: soldStatus, buyer: buyerName, soldPrice: soldPriceVal });
+  } catch (error) {
+    console.error('Error updating status:', error);
+    res.status(500).json({ error: 'Error updating product status' });
+  }
+});
+
+// API: Reorder all products
+app.post('/api/ordenar-productos', (req, res) => {
+  try {
+    const { slugs } = req.body;
+    if (!slugs || !Array.isArray(slugs)) {
+      return res.status(400).json({ error: 'Slugs array is required.' });
+    }
+
+    slugs.forEach((slug, index) => {
+      const productDir = path.join(contentDir, slug);
+      const mdPath = path.join(productDir, 'index.md');
+      if (fs.existsSync(mdPath)) {
+        const content = fs.readFileSync(mdPath, 'utf-8');
+        const { attributes, body } = parseFrontMatter(content);
+        
+        const weightNum = index + 1;
+        const titleVal = attributes.title || slug;
+        const priceVal = parseFloat(attributes.price) || 0;
+        const dateVal = attributes.date || new Date().toISOString();
+        
+        let category = attributes.categories || "";
+        if (category.startsWith('[') && category.endsWith(']')) {
+          category = category.slice(1, -1).replace(/^["']|["']$/g, '').trim();
+        }
+        
+        const soldVal = attributes.sold === 'true' || attributes.sold === true;
+        const buyerVal = attributes.buyer || '';
+        const soldPriceVal = parseFloat(attributes.soldPrice) || 0;
+        
+        const markdownContent = `---
+title: "${titleVal.replace(/"/g, '\\"')}"
+price: ${priceVal}
+date: ${dateVal}
+draft: false
+categories: ["${category.replace(/"/g, '\\"')}"]
+weight: ${weightNum}
+sold: ${soldVal}
+buyer: "${buyerVal.replace(/"/g, '\\"')}"
+soldPrice: ${soldPriceVal}
+---
+${body.trim()}
+`;
+
+        fs.writeFileSync(mdPath, markdownContent, 'utf-8');
+      }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error reordering products:', error);
+    res.status(500).json({ error: 'Internal server error while reordering products.' });
+  }
+});
+
+// API: Delete product
+app.delete('/api/productos/:slug', (req, res) => {
+  try {
+    const slug = req.params.slug;
+    const productDir = path.join(contentDir, slug);
+
+    if (!fs.existsSync(productDir)) {
+      return res.status(404).json({ error: 'Product does not exist.' });
+    }
+
+    // Remove recursively
+    fs.rmSync(productDir, { recursive: true, force: true });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    res.status(500).json({ error: 'Error deleting product' });
+  }
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Admin server running on http://localhost:${PORT}`);
+});

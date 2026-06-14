@@ -1,0 +1,211 @@
+// --- Search Bar Component ---
+.search-bar-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+
+  .search-input-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  #product-search {
+    width: 100%;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    padding: 0.875rem 1rem 0.875rem 3rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: var(--transition-smooth);
+    box-shadow: var(--shadow-inset);
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+      background-color: var(--bg-surface-hover);
+    }
+  }
+}
+
+// --- Empty Catalog/Results States ---
+.empty-catalog {
+  text-align: center;
+  padding: 4rem 1.5rem;
+  background-color: var(--bg-surface);
+  border: 1px dashed var(--border-color);
+  border-radius: 1.5rem;
+  max-width: 500px;
+  margin: 2rem auto;
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: var(--text-muted);
+    font-weight: 300;
+  }
+}
+
+// --- Category Filters and Badges ---
+.category-filters-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: -1.5rem;
+  margin-bottom: 2.5rem;
+  justify-content: center;
+
+  .filter-btn {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.5rem 1.25rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+
+    &:hover {
+      border-color: var(--border-color-active);
+      color: var(--text-primary);
+    }
+
+    &.active {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+    }
+  }
+}
+
+.product-card-category {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-accent);
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  display: inline-block;
+}
+
+.detail-category {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-accent);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  display: inline-block;
+}
+
+// --- Purchase and WhatsApp Actions ---
+.purchase-action-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: var(--shadow-premium);
+
+  p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+
+.whatsapp-btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  background-color: var(--color-whatsapp);
+  color: #ffffff;
+  padding: 1rem 2rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  transition: var(--transition-smooth);
+  box-shadow: 0 4px 14px 0 rgba(37, 211, 102, 0.4);
+
+  &:hover {
+    background-color: var(--color-whatsapp-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px 0 rgba(37, 211, 102, 0.5);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  .wa-icon {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.copy-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+  padding: 1rem 2rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  margin-top: 0.75rem;
+
+  &:hover {
+    background-color: var(--bg-surface);
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  .copy-icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.action-note {
+  font-size: 0.8rem !important;
+  color: var(--text-muted) !important;
+  margin-top: 0.75rem;
+  margin-bottom: 0 !important;
+}

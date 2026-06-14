@@ -1,0 +1,9 @@
+feat(catalog): add product sold status, modularize styling (SCSS), and clean up javascript assets
+
+- Add "Mark as Sold" toggle with Buyer Name and Sold Price inside the admin edit form
+- Dim and grayscale sold product cards in both admin and public catalog grid lists
+- Display "Sold to [Buyer]" and details on catalog cards and detail pages
+- Reorganize styling into modular SASS partials under assets/scss/ compiled with Hugo Pipes
+- Extract inline gallery/lightbox/clipboard script into a standalone assets/js module
+- Fix data erasure bug by preserving sold status/price during catalog reordering
+- Fix TypeError by reordering HTML modal parsing before script evaluation

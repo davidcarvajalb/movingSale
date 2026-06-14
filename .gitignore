@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Hugo build outputs
+public/
+resources/_gen/
+.hugo_build.lock
+
+# Temporary upload files
+tmp-uploads/*
+!tmp-uploads/.gitkeep

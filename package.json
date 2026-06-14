@@ -1,0 +1,13 @@
+{
+  "name": "movingsale-admin",
+  "version": "1.0.0",
+  "description": "Panel de administración local para catálogo estático en Hugo",
+  "main": "admin-server.js",
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  },
+  "scripts": {
+    "start": "node admin-server.js"
+  }
+}

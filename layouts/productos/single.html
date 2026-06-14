@@ -1,0 +1,152 @@
+{{ define "main" }}
+
+<div class="detail-container">
+  <div class="back-nav">
+    <a href="/" class="back-link">&larr; Back to catalog</a>
+  </div>
+
+  <div class="product-detail-layout">
+    <!-- Left: Gallery Section -->
+    <div class="product-gallery">
+      {{ $images := .Resources.ByType "image" }}
+      
+      {{ if eq (len $images) 0 }}
+        <div class="detail-no-image">
+          <span>No photos available for this product</span>
+        </div>
+      {{ else }}
+        <!-- Main Image -->
+        <div class="main-image-viewport" id="main-image-viewport">
+          {{ $firstImage := index $images 0 }}
+          {{ $mainImgOpt := $firstImage.Resize "800x" }} <!-- Resize to 800px width keeping aspect ratio -->
+          <img src="{{ $mainImgOpt.RelPermalink }}" alt="{{ .Title }}" id="main-product-image" class="main-image-display">
+          
+          {{ if gt (len $images) 1 }}
+            <button class="carousel-arrow prev" id="carousel-prev" aria-label="Previous image">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; display: block;">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <button class="carousel-arrow next" id="carousel-next" aria-label="Next image">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; display: block;">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          {{ end }}
+        </div>
+        
+        <!-- Thumbnails (only if more than 1 image) -->
+        {{ if gt (len $images) 1 }}
+          <div class="thumbnails-container">
+            {{ range $index, $image := $images }}
+              {{ $thumb := $image.Fill "150x150 q80" }}
+              {{ $fullRes := $image.Resize "800x" }}
+              <button 
+                class="thumbnail-btn {{ if eq $index 0 }}active{{ end }}" 
+                data-full-src="{{ $fullRes.RelPermalink }}"
+                aria-label="View image {{ add $index 1 }}"
+              >
+                <img src="{{ $thumb.RelPermalink }}" alt="Thumbnail {{ add $index 1 }}" loading="lazy">
+              </button>
+            {{ end }}
+          </div>
+        {{ end }}
+      {{ end }}
+    </div>
+
+    <!-- Right: Product Information Section -->
+    <div class="product-info-panel">
+      {{ with .Params.categories }}
+        <span class="detail-category">{{ index . 0 }}</span>
+      {{ end }}
+      <h1 class="detail-title">{{ .Title }}</h1>
+      
+      <div class="detail-price">
+        {{ site.Params.currencySymbol }}{{ .Params.price }}
+      </div>
+
+      <div class="detail-description-content">
+        <h3>Item Details</h3>
+        <div class="markdown-body">
+          {{ .Content }}
+        </div>
+      </div>
+
+      <!-- Action Box -->
+      {{ if .Params.sold }}
+        <div class="sold-action-card">
+          <h3>Sold</h3>
+          <p>This item has already been sold.</p>
+          {{ if .Params.buyer }}
+            <span class="buyer-badge">Bought by {{ .Params.buyer }}{{ if .Params.soldPrice }} for {{ site.Params.currencySymbol }}{{ .Params.soldPrice }}{{ end }}</span>
+          {{ end }}
+          
+          <button id="copy-link-btn" class="copy-link-btn" data-link="{{ .Permalink }}" style="margin-top: 1.5rem;">
+            <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="copy-btn-text">Copy Link</span>
+          </button>
+        </div>
+      {{ else }}
+        <div class="purchase-action-card">
+          <p>Are you interested in this item or have any questions?</p>
+          
+          {{ $waNumber := site.Params.whatsappNumber }}
+          {{ $priceStr := printf "%s%v" site.Params.currencySymbol .Params.price }}
+          {{ $messageText := printf "Hi! I am interested in the item: %s (%s). You can view the details here: %s" .Title $priceStr .Permalink }}
+          {{ $waUrl := printf "https://wa.me/%s?text=%s" $waNumber (urlquery $messageText) }}
+          
+          <a href="{{ $waUrl }}" target="_blank" rel="noopener noreferrer" class="whatsapp-btn-action">
+            <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 001.37 5.054L2 22l5.077-1.33a9.92 9.92 0 004.93 1.313h.004c5.505 0 9.989-4.478 9.99-9.985A9.97 9.97 0 0012.012 2zm5.795 13.918c-.287.808-1.42 1.48-1.97 1.542-.49.056-1.127.082-1.802-.133a11.042 11.042 0 01-4.225-2.678 11.233 11.233 0 01-2.92-3.864c-.38-.66-.607-1.396-.603-2.128.004-.848.435-1.272.587-1.425.138-.139.363-.205.58-.205.07 0 .135.003.195.006.183.009.308.02.435.29.168.358.577 1.408.627 1.51.05.102.083.22.016.354-.067.134-.1.22-.201.339-.1.118-.21.264-.3.377-.101.123-.207.258-.09.46.118.203.522.86.1.78.368.64.654 1.18.966 1.427.311.246.49.27.674.067.185-.202.774-.9.98-1.21.085-.124.168-.101.287-.056.12.045.759.358.893.425.134.067.223.101.256.157.034.056.034.325-.084.706z"/>
+            </svg>
+            Contact via WhatsApp
+          </a>
+
+          <button id="copy-link-btn" class="copy-link-btn" data-link="{{ .Permalink }}">
+            <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="copy-btn-text">Copy Link</span>
+          </button>
+          
+          <p class="action-note">The item link will be sent automatically so I know which one it is.</p>
+        </div>
+      {{ end }}
+    </div>
+  </div>
+  <!-- Lightbox Popin Modal -->
+  <div id="lightbox-modal" class="lightbox-modal" role="dialog" aria-modal="true" aria-label="Product image viewer">
+    <button class="lightbox-close" id="lightbox-close" aria-label="Close viewer">&times;</button>
+    
+    {{ if gt (len $images) 1 }}
+      <button class="lightbox-arrow prev" id="lightbox-prev" aria-label="Previous image">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; display: block;">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <button class="lightbox-arrow next" id="lightbox-next" aria-label="Next image">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; display: block;">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    {{ end }}
+
+    <div class="lightbox-container">
+      <div class="lightbox-img-wrapper" id="lightbox-img-wrapper">
+        <img src="" alt="Zoomed product view" class="lightbox-img" id="lightbox-img">
+      </div>
+      <div class="lightbox-caption" id="lightbox-caption">Click to zoom. Move mouse to pan.</div>
+    </div>
+  </div>
+</div>
+
+{{ end }}
+
+{{ define "scripts" }}
+  {{ $js := resources.Get "js/product-detail.js" | minify | fingerprint }}
+  <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+{{ end }}

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  hugo:
+    image: ghcr.io/gohugoio/hugo:latest
+    ports:
+      - "1313:1313"
+    volumes:
+      - .:/src
+    working_dir: /src
+    command: server --bind 0.0.0.0 --port 1313 --liveReloadPort=1313
+    environment:
+      - HUGO_BIND=0.0.0.0
+      - HUGO_PORT=1313
+
+  admin:
+    image: node:20-alpine
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: sh -c "npm install && npm start"
+    environment:
+      - PORT=3000
+    depends_on:
+      - hugo
