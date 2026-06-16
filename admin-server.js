@@ -68,6 +68,53 @@ function parseFrontMatter(content) {
   return { attributes, body };
 }
 
+function normalizeReferenceUrl(url) {
+  const value = (url || '').trim();
+  if (!value) return '';
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.toString();
+    }
+  } catch (error) {
+    // Invalid URLs are treated as empty optional fields.
+  }
+
+  return '';
+}
+
+function parseCategories(value) {
+  if (Array.isArray(value)) {
+    return value.map(String).map(item => item.trim()).filter(Boolean);
+  }
+
+  const raw = (value || '').trim();
+  if (!raw) return [];
+
+  if (raw.startsWith('[') && raw.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map(String).map(item => item.trim()).filter(Boolean);
+      }
+    } catch (error) {
+      // Fall back to comma parsing below.
+    }
+  }
+
+  return raw
+    .split(',')
+    .map(item => item.replace(/^["']|["']$/g, '').trim())
+    .filter(Boolean);
+}
+
+function formatCategories(value) {
+  const categories = [...new Set(parseCategories(value))];
+  const quoted = categories.map(item => `"${item.replace(/"/g, '\\"')}"`);
+  return `[${quoted.join(', ')}]`;
+}
+
 // API: Get all products
 app.get('/api/products', (req, res) => {
   try {
@@ -90,10 +137,7 @@ app.get('/api/products', (req, res) => {
           const files = fs.readdirSync(folderPath);
           const images = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
 
-          let category = attributes.categories || "";
-          if (category.startsWith('[') && category.endsWith(']')) {
-            category = category.slice(1, -1).replace(/^["']|["']$/g, '').trim();
-          }
+          const categories = parseCategories(attributes.categories);
 
           productos.push({
             slug: folder,
@@ -101,7 +145,9 @@ app.get('/api/products', (req, res) => {
             price: parseFloat(attributes.price) || 0,
             date: attributes.date || '',
             description: body.trim(),
-            category: category,
+            category: categories.join(', '),
+            categories: categories,
+            referenceUrl: attributes.referenceUrl || '',
             weight: parseInt(attributes.weight) || 100,
             images: images,
             sold: attributes.sold === 'true' || attributes.sold === true
@@ -122,7 +168,7 @@ app.get('/api/products', (req, res) => {
 // API: Create new product
 app.post('/api/products', upload.array('photos', 10), (req, res) => {
   try {
-    const { title, price, description, category, weight } = req.body;
+    const { title, price, description, category, referenceUrl, weight } = req.body;
     if (!title || !price) {
       return res.status(400).json({ error: 'Title and price are required.' });
     }
@@ -162,13 +208,15 @@ app.post('/api/products', upload.array('photos', 10), (req, res) => {
     // Generate Markdown file content
     const dateStr = new Date().toISOString();
     const weightNum = parseInt(weight) || 100;
-    const catStr = category || '';
+    const catStr = formatCategories(category);
+    const refUrl = normalizeReferenceUrl(referenceUrl);
     const markdownContent = `---
 title: "${title.replace(/"/g, '\\"')}"
 price: ${parseFloat(price)}
 date: ${dateStr}
 draft: false
-categories: ["${catStr.replace(/"/g, '\\"')}"]
+categories: ${catStr}
+referenceUrl: "${refUrl.replace(/"/g, '\\"')}"
 weight: ${weightNum}
 sold: false
 ---
@@ -194,7 +242,7 @@ app.post('/api/products/:oldSlug', upload.array('photos', 10), (req, res) => {
       return res.status(404).json({ error: 'Product does not exist.' });
     }
 
-    const { title, price, description, category, weight, deletePhotos, photoOrder } = req.body;
+    const { title, price, description, category, referenceUrl, weight, deletePhotos, photoOrder } = req.body;
     if (!title || !price) {
       return res.status(400).json({ error: 'Title and price are required.' });
     }
@@ -305,13 +353,15 @@ app.post('/api/products/:oldSlug', upload.array('photos', 10), (req, res) => {
 
     // 6. Write updated Markdown
     const weightNum = parseInt(weight) || 100;
-    const catStr = category || '';
+    const catStr = formatCategories(category);
+    const refUrl = normalizeReferenceUrl(referenceUrl);
     const markdownContent = `---
 title: "${title.replace(/"/g, '\\"')}"
 price: ${parseFloat(price)}
 date: ${dateStr}
 draft: false
-categories: ["${catStr.replace(/"/g, '\\"')}"]
+categories: ${catStr}
+referenceUrl: "${refUrl.replace(/"/g, '\\"')}"
 weight: ${weightNum}
 sold: ${originalSold}
 ---
@@ -322,6 +372,8 @@ ${description || ''}
 
     res.json({ success: true, slug: newSlug });
   } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ error: 'Internal server error while updating product' });
   }
 });
 
@@ -343,11 +395,7 @@ app.post('/api/products/:slug/status', (req, res) => {
     // Update attributes
     const soldStatus = sold === true || sold === 'true';
 
-    // Parse categories cleanly
-    let categoriesStr = attributes.categories || '';
-    if (categoriesStr.startsWith('[') && categoriesStr.endsWith(']')) {
-      categoriesStr = categoriesStr.slice(1, -1).replace(/^["']|["']$/g, '').trim();
-    }
+    const categoriesStr = formatCategories(attributes.categories);
 
     // Write updated Markdown
     const markdownContent = `---
@@ -355,8 +403,9 @@ title: "${(attributes.title || slug).replace(/"/g, '\\"')}"
 price: ${parseFloat(attributes.price) || 0}
 date: ${attributes.date || new Date().toISOString()}
 draft: false
-categories: ["${categoriesStr.replace(/"/g, '\\"')}"]
+categories: ${categoriesStr}
 weight: ${parseInt(attributes.weight) || 100}
+referenceUrl: "${normalizeReferenceUrl(attributes.referenceUrl).replace(/"/g, '\\"')}"
 sold: ${soldStatus}
 ---
 ${body.trim()}
@@ -389,11 +438,9 @@ app.post('/api/reorder-products', (req, res) => {
         const titleVal = attributes.title || slug;
         const priceVal = parseFloat(attributes.price) || 0;
         const dateVal = attributes.date || new Date().toISOString();
+        const referenceUrlVal = normalizeReferenceUrl(attributes.referenceUrl);
         
-        let category = attributes.categories || "";
-        if (category.startsWith('[') && category.endsWith(']')) {
-          category = category.slice(1, -1).replace(/^["']|["']$/g, '').trim();
-        }
+        const category = formatCategories(attributes.categories);
         
         const soldVal = attributes.sold === 'true' || attributes.sold === true;
         
@@ -402,7 +449,8 @@ title: "${titleVal.replace(/"/g, '\\"')}"
 price: ${priceVal}
 date: ${dateVal}
 draft: false
-categories: ["${category.replace(/"/g, '\\"')}"]
+categories: ${category}
+referenceUrl: "${referenceUrlVal.replace(/"/g, '\\"')}"
 weight: ${weightNum}
 sold: ${soldVal}
 ---

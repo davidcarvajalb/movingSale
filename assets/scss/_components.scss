@@ -203,6 +203,30 @@
   }
 }
 
+.reference-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background-color: transparent;
+  color: var(--color-accent);
+  padding: 0.9rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  margin-bottom: 1.25rem;
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--color-accent);
+    background-color: var(--bg-surface);
+    transform: translateY(-2px);
+  }
+}
+
 .action-note {
   font-size: 0.8rem !important;
   color: var(--text-muted) !important;

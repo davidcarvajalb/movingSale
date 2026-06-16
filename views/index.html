@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css">
   <style>
     :root {
       --bg-color: #0f172a;
@@ -103,6 +104,7 @@
     }
 
     .form-group input[type="text"],
+    .form-group input[type="url"],
     .form-group input[type="number"],
     .form-group textarea {
       width: 100%;
@@ -121,6 +123,46 @@
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .form-group .tagify {
+      width: 100%;
+      background-color: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 0.5rem;
+      padding: 0.35rem;
+      color: var(--text-main);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group .tagify.tagify--focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .form-group .tagify__input {
+      color: var(--text-main);
+    }
+
+    .form-group .tagify__input::before {
+      color: var(--text-muted);
+    }
+
+    .form-group .tagify__tag > div {
+      background-color: rgba(99, 102, 241, 0.22);
+      color: var(--text-main);
+      border: 1px solid rgba(165, 180, 252, 0.25);
+      border-radius: 0.375rem;
+    }
+
+    .form-group .tagify__dropdown {
+      background-color: #0f172a;
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+    }
+
+    .form-group .tagify__dropdown__item--active {
+      background-color: var(--primary);
     }
 
     /* Image upload box */
@@ -214,7 +256,8 @@
     }
 
     .product-item {
-      display: flex;
+      display: grid;
+      grid-template-columns: 80px minmax(0, 1fr) auto;
       align-items: center;
       background-color: #1e293b;
       border: 1px solid var(--card-border);
@@ -222,6 +265,9 @@
       padding: 1rem;
       gap: 1rem;
       position: relative;
+      max-width: 100%;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .product-thumb {
@@ -235,8 +281,8 @@
     }
 
     .product-info {
-      flex-grow: 1;
       min-width: 0;
+      max-width: 100%;
     }
 
     .product-info h3 {
@@ -259,9 +305,20 @@
     .product-info .desc {
       font-size: 0.85rem;
       color: var(--text-muted);
-      white-space: nowrap;
+      white-space: normal;
       overflow: hidden;
-      text-overflow: ellipsis;
+      overflow-wrap: anywhere;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-height: 1.35;
+    }
+
+    .product-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      flex-shrink: 0;
     }
 
     .delete-btn {
@@ -411,6 +468,37 @@
       height: 20px;
     }
 
+    @media (max-width: 700px) {
+      .product-item {
+        grid-template-columns: 64px minmax(0, 1fr);
+        align-items: start;
+        gap: 0.75rem;
+        padding: 0.85rem;
+      }
+
+      .product-thumb {
+        width: 64px;
+        height: 64px;
+      }
+
+      .product-info h3 {
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .product-info .desc {
+        -webkit-line-clamp: 3;
+      }
+
+      .product-actions {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        justify-content: flex-end;
+        border-top: 1px solid var(--card-border);
+        padding-top: 0.5rem;
+      }
+    }
+
     /* Drag and Drop Visual Helpers */
     .product-item {
       cursor: grab;
@@ -547,8 +635,8 @@
           </div>
 
           <div class="form-group">
-            <label for="category">Category</label>
-            <input type="text" id="category" name="category" placeholder="e.g. Furniture, Electronics">
+            <label for="category">Categories</label>
+            <input type="text" id="category" name="category" placeholder="Type or choose categories">
           </div>
           <input type="hidden" id="weight" name="weight" value="100">
 
@@ -563,11 +651,16 @@
           </div>
 
           <div class="form-group">
+            <label for="reference-url">Reference Link</label>
+            <input type="url" id="reference-url" name="referenceUrl" placeholder="https://example.com/original-product">
+          </div>
+
+          <div class="form-group">
             <label>Product Photos (Max. 10)</label>
             <div class="file-dropzone" id="dropzone">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
               <p>Drag your photos here or click to browse</p>
-              <input type="file" id="file-input" name="photos" multiple accept="image/*">
+              <input type="file" id="file-input" name="photos" multiple accept="image/jpeg,image/png,image/gif,image/webp">
             </div>
             <div class="preview-container" id="preview-container"></div>
           </div>
@@ -608,6 +701,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
   <script>
     const form = document.getElementById('product-form');
     const dropzone = document.getElementById('dropzone');
@@ -626,12 +720,66 @@
     const existingPhotosContainer = document.getElementById('existing-photos-container');
     const categoryInput = document.getElementById('category');
     const weightInput = document.getElementById('weight');
+    let categoryTagify = null;
 
     let selectedFiles = [];
     let allProducts = [];
     let editMode = false;
     let editSlug = null;
     let photosToDelete = [];
+
+    function splitCategoryInput(value) {
+      if (Array.isArray(value)) return value;
+      return (value || '').split(',').map(item => item.trim()).filter(Boolean);
+    }
+
+    function initCategoryTags() {
+      if (!window.Tagify) return;
+
+      categoryTagify = new Tagify(categoryInput, {
+        whitelist: [],
+        delimiters: ',',
+        duplicates: false,
+        enforceWhitelist: false,
+        dropdown: {
+          enabled: 0,
+          maxItems: 20,
+          closeOnSelect: false
+        },
+        originalInputValueFormat: values => values.map(item => item.value).join(', ')
+      });
+    }
+
+    function getCategoryValue() {
+      if (!categoryTagify) return categoryInput.value.trim();
+      return categoryTagify.value.map(item => item.value.trim()).filter(Boolean).join(', ');
+    }
+
+    function setCategoryTags(value) {
+      const categories = splitCategoryInput(value);
+      if (!categoryTagify) {
+        categoryInput.value = categories.join(', ');
+        return;
+      }
+
+      categoryTagify.removeAllTags();
+      if (categories.length > 0) {
+        categoryTagify.addTags(categories);
+      }
+    }
+
+    function updateCategoryWhitelist(products) {
+      if (!categoryTagify) return;
+
+      const categories = [...new Set(products.flatMap(product => {
+        if (Array.isArray(product.categories)) return product.categories;
+        return splitCategoryInput(product.category || '');
+      }))].sort((a, b) => a.localeCompare(b));
+
+      categoryTagify.settings.whitelist = categories;
+    }
+
+    initCategoryTags();
 
     // Trigger file select
     dropzone.addEventListener('click', () => fileInput.click());
@@ -663,7 +811,12 @@
     });
 
     function handleFiles(files) {
-      const imageFiles = files.filter(file => file.type.startsWith('image/'));
+      const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const imageFiles = files.filter(file => allowedImageTypes.includes(file.type));
+
+      if (imageFiles.length !== files.length) {
+        showToast('Only JPG, PNG, GIF, and WebP images are supported.', 'error');
+      }
       
       // Limit to 10 files
       if (selectedFiles.length + imageFiles.length > 10) {
@@ -700,6 +853,7 @@
         const response = await fetch('/api/products');
         const products = await response.json();
         allProducts = products; // Save to global state
+        updateCategoryWhitelist(products);
 
         if (products.length === 0) {
           productsContainer.innerHTML = `
@@ -734,8 +888,9 @@
               <h3>${p.title}${isSold ? ' <span style="color: #64748b; font-size: 0.8rem; font-weight: 700;">[SOLD]</span>' : ''}</h3>
               <p class="price">$${p.price.toFixed(2)}</p>
               <p class="desc">${p.category ? `[${p.category}] ` : ''}${p.description || 'No description'}</p>
+              ${p.referenceUrl ? '<p class="desc">Reference link saved</p>' : ''}
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <div class="product-actions">
               <button class="edit-btn" title="Edit Product" onclick="event.stopPropagation(); startEdit('${p.slug}')">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
               </button>
@@ -866,7 +1021,8 @@
       document.getElementById('title').value = product.title;
       document.getElementById('price').value = product.price;
       document.getElementById('description').value = product.description || '';
-      categoryInput.value = product.category || '';
+      document.getElementById('reference-url').value = product.referenceUrl || '';
+      setCategoryTags(product.categories || product.category || '');
       weightInput.value = product.weight || 100;
 
       editMode = true;
@@ -997,6 +1153,7 @@
     // Cancel edit mode
     function cancelEdit() {
       form.reset();
+      setCategoryTags('');
       previewContainer.innerHTML = '';
       selectedFiles = [];
       editMode = false;
@@ -1050,7 +1207,8 @@
       const title = document.getElementById('title').value;
       const price = document.getElementById('price').value;
       const description = document.getElementById('description').value;
-      const category = categoryInput.value;
+      const referenceUrl = document.getElementById('reference-url').value;
+      const category = getCategoryValue();
       const weight = weightInput.value;
 
       if (!title || !price) {
@@ -1067,6 +1225,7 @@
       formData.append('title', title);
       formData.append('price', price);
       formData.append('description', description);
+      formData.append('referenceUrl', referenceUrl);
       formData.append('category', category);
       formData.append('weight', weight);
       

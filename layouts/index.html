@@ -52,12 +52,16 @@
 
       <div class="products-grid" id="products-grid">
         {{ range $productos }}
-          {{ $images := .Resources.ByType "image" }}
-          {{ $firstImage := index $images 0 }}
-          
+          {{ $images := slice }}
+          {{ range .Resources.ByType "image" }}
+            {{ $ext := path.Ext .Name | lower }}
+            {{ if not (in (slice ".heic" ".heif") $ext) }}
+              {{ $images = $images | append . }}
+            {{ end }}
+          {{ end }}
           {{ $catStr := "" }}
           {{ with .Params.categories }}
-            {{ $catStr = delimit . " " }}
+            {{ $catStr = delimit . "||" }}
           {{ end }}
           
           <article class="product-card {{ if .Params.sold }}sold{{ end }}" data-title="{{ .Title | lower }}" data-desc="{{ .Plain | lower }}" data-category="{{ $catStr | lower }}">
@@ -66,8 +70,10 @@
                 {{ if .Params.sold }}
                   <span class="sold-badge">Sold</span>
                 {{ end }}
-                {{ if $firstImage }}
-                  {{ $thumb := $firstImage.Fill "500x500 q85" }}
+                {{ if gt (len $images) 0 }}
+                  {{ $firstImage := index $images 0 }}
+                  {{ $orientedImage := $firstImage.Filter images.AutoOrient }}
+                  {{ $thumb := $orientedImage.Fit "500x500 q85" }}
                   <img src="{{ $thumb.RelPermalink }}" alt="{{ .Title }}" class="product-card-image" loading="lazy">
                 {{ else }}
                   <div class="no-image-placeholder">
@@ -124,7 +130,7 @@
         const title = card.getAttribute('data-title');
         const desc = card.getAttribute('data-desc');
         const cardCategoryStr = card.getAttribute('data-category') || '';
-        const cardCategories = cardCategoryStr.split(' ').map(c => c.trim()).filter(c => c);
+        const cardCategories = cardCategoryStr.split('||').map(c => c.trim()).filter(c => c);
         
         const matchesSearch = title.includes(query) || desc.includes(query);
         const matchesCategory = currentCategory === 'all' || cardCategories.includes(currentCategory);

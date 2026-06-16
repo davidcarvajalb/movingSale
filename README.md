@@ -11,7 +11,9 @@ A modern, high-performance static catalog site built with **Hugo** and a custom 
 - **Interactive Drag & Drop:** 
   - Drag products in the list to reorder them instantly on the catalog page.
   - Drag product images to rearrange their sequence in the gallery.
+- **Category Tags:** Add one or more categories with autocomplete based on existing catalog categories.
 - **Sequential Image Renaming:** Uploaded and edited images are automatically cleaned up and renamed (e.g. `foto-1.jpg`, `foto-2.jpg`) sequentially.
+- **Reference Link:** Optionally store a public source/original listing URL for visitors to compare the original item details.
 - **Mark as Sold:** Lock sold items from the edit menu without publishing buyer or final sale details.
 - **Grayscale Dimming:** Sold items are automatically greyed out in the administrator list to highlight available inventory.
 
@@ -19,6 +21,7 @@ A modern, high-performance static catalog site built with **Hugo** and a custom 
 - **Grid Layout & Filters:** Modern grid layout with real-time text search and dynamic filter buttons by category.
 - **Grayscale Dimming on Sold Items:** Sold products are automatically greyed out and overlayed with a `"Sold"` badge.
 - **Product Gallery Carousel:** Responsive carousel navigation (with touch swipe support for mobile devices).
+- **Optional Original Listing Button:** Products with a reference link show a button that opens the original listing in a new tab.
 - **Fullscreen Lightbox Zoom:** Click on any photo to open a fullscreen blur-backdrop lightbox. Supports zoom-in (2.2x), mouse cursor panning, touch swipes, and synchronized thumbnail previews.
 - **WhatsApp Contact Triggers:** Direct contact button that pre-populates a message with the product link and price (hidden automatically on sold items).
 - **Copy Link Button:** Premium clipboard copying button with visual success animations, featuring fallbacks for insecure HTTP environments.

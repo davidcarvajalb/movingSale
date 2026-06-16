@@ -8,7 +8,13 @@
   <div class="product-detail-layout">
     <!-- Left: Gallery Section -->
     <div class="product-gallery">
-      {{ $images := .Resources.ByType "image" }}
+      {{ $images := slice }}
+      {{ range .Resources.ByType "image" }}
+        {{ $ext := path.Ext .Name | lower }}
+        {{ if not (in (slice ".heic" ".heif") $ext) }}
+          {{ $images = $images | append . }}
+        {{ end }}
+      {{ end }}
       
       {{ if eq (len $images) 0 }}
         <div class="detail-no-image">
@@ -17,7 +23,7 @@
       {{ else }}
         <!-- Main Image -->
         <div class="main-image-viewport" id="main-image-viewport">
-          {{ $firstImage := index $images 0 }}
+          {{ $firstImage := (index $images 0).Filter images.AutoOrient }}
           {{ $mainImgOpt := $firstImage.Resize "800x" }} <!-- Resize to 800px width keeping aspect ratio -->
           <img src="{{ $mainImgOpt.RelPermalink }}" alt="{{ .Title }}" id="main-product-image" class="main-image-display">
           
@@ -39,8 +45,9 @@
         {{ if gt (len $images) 1 }}
           <div class="thumbnails-container">
             {{ range $index, $image := $images }}
-              {{ $thumb := $image.Fill "150x150 q80" }}
-              {{ $fullRes := $image.Resize "800x" }}
+              {{ $orientedImage := $image.Filter images.AutoOrient }}
+              {{ $thumb := $orientedImage.Fit "150x150 q80" }}
+              {{ $fullRes := $orientedImage.Resize "800x" }}
               <button 
                 class="thumbnail-btn {{ if eq $index 0 }}active{{ end }}" 
                 data-full-src="{{ $fullRes.RelPermalink }}"
@@ -71,6 +78,12 @@
           {{ .Content }}
         </div>
       </div>
+
+      {{ with .Params.referenceUrl }}
+        <a href="{{ . }}" target="_blank" rel="noopener noreferrer" class="reference-link-btn">
+          Reference link
+        </a>
+      {{ end }}
 
       <!-- Action Box -->
       {{ if .Params.sold }}
