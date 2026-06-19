@@ -4,10 +4,10 @@ price: 15
 date: 2026-06-16T00:07:20.910Z
 draft: false
 categories: ["Electronics"]
+weight: 34
 referenceUrl: ""
 availableFrom: ""
-weight: 34
-sold: false
+sold: true
 onHold: false
 ---
 HP Envy 4520 All-in-One Printer
