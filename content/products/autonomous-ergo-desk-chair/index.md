@@ -8,5 +8,6 @@ referenceUrl: "https://www.autonomous.ai/en-CA/office-chairs/ergonomic-chair?opt
 availableFrom: "2026-08-20"
 weight: 6
 sold: false
+onHold: true
 ---
 Autonomous ErgoChair Pro in the evergreen colour.

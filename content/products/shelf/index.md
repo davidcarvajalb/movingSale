@@ -1,6 +1,6 @@
 ---
 title: "Shelf"
-price: 80
+price: 70
 date: 2026-06-14T10:59:27.698Z
 draft: false
 categories: ["Furniture"]
@@ -8,6 +8,7 @@ referenceUrl: "https://www.jysk.ca/fr/caja-tall-cabinet-white.html"
 availableFrom: ""
 weight: 100
 sold: false
+onHold: false
 ---
 EN * 
 CAJA Linen Tower Cabinet

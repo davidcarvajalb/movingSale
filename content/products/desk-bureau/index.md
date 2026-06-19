@@ -1,6 +1,6 @@
 ---
 title: "Desk / Bureau "
-price: 20
+price: 40
 date: 2026-06-19T18:09:31.990Z
 draft: false
 categories: ["Furniture"]
@@ -21,4 +21,3 @@ Le bureau est par ailleurs fonctionnel et constitue un ajout pratique à tout es
 Des autocollants décoratifs se trouvent sur la surface principale du bureau (visibles sur la photo), apposés pour masquer une éraflure.
 
 Une tache visible est présente sur le côté du cadre du bureau (veuillez examiner attentivement les images).
-

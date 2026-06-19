@@ -1,5 +1,5 @@
 ---
-title: "Gaming chair / "
+title: "HIgh-end Ergonomic chair"
 price: 200
 date: 2026-06-16T15:45:49.074Z
 draft: false
@@ -8,6 +8,7 @@ referenceUrl: "https://www.ikea.com/ca/fr/p/styrspel-chaise-de-jeu-rouge-7061305
 availableFrom: "2026-08-20"
 weight: 19
 sold: false
+onHold: false
 ---
 STYRSPEL gaming chair helps you play at the top of your game. Adjust the headrest, lumbar support, armrests and the seat height and depth – the mesh material keeps you cool when the game heats up! This chair is very easy to clean 
 ********************************************
