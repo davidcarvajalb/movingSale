@@ -8,6 +8,7 @@ referenceUrl: ""
 availableFrom: ""
 weight: 17
 sold: false
+onHold: false
 ---
 Beautiful Martha Stewart dinnerware pieces from the Empress Bouquet collection (fine ceramic with floral design). The pieces are clean and in excellent condition.
 
