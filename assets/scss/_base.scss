@@ -71,9 +71,16 @@ a {
   }
 
   .tagline {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    font-weight: 400;
+    color: var(--color-accent);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.45;
+    text-align: center;
+    text-shadow: 0 0 18px rgba(165, 180, 252, 0.2);
+
+    @media (min-width: 768px) {
+      text-align: right;
+    }
   }
 }
 
