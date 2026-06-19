@@ -17,8 +17,30 @@
 
   <!-- Product Grid -->
   <section class="products-section">
-    <!-- Sort products by Weight ascending, Date descending -->
-    {{ $productos := (where .Site.RegularPages "Section" "products").ByWeight }}
+    <!-- Status takes priority; preserve Weight order within each group. -->
+    {{ $availableProducts := slice }}
+    {{ $onHoldProducts := slice }}
+    {{ $soldProducts := slice }}
+    {{ range (where .Site.RegularPages "Section" "products").ByWeight }}
+      {{ if .Params.sold }}
+        {{ $soldProducts = $soldProducts | append . }}
+      {{ else if .Params.onHold }}
+        {{ $onHoldProducts = $onHoldProducts | append . }}
+      {{ else }}
+        {{ $availableProducts = $availableProducts | append . }}
+      {{ end }}
+    {{ end }}
+
+    {{ $productos := slice }}
+    {{ range $availableProducts }}
+      {{ $productos = $productos | append . }}
+    {{ end }}
+    {{ range $onHoldProducts }}
+      {{ $productos = $productos | append . }}
+    {{ end }}
+    {{ range $soldProducts }}
+      {{ $productos = $productos | append . }}
+    {{ end }}
     
     {{ if eq (len $productos) 0 }}
       <div class="empty-catalog">

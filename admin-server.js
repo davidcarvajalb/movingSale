@@ -116,6 +116,12 @@ function parseBoolean(value) {
   return value === true || value === 'true';
 }
 
+function getProductStatusRank(product) {
+  if (parseBoolean(product.sold)) return 2;
+  if (parseBoolean(product.onHold)) return 1;
+  return 0;
+}
+
 function parseCategories(value) {
   if (Array.isArray(value)) {
     return value.map(String).map(item => item.trim()).filter(Boolean);
@@ -190,8 +196,13 @@ app.get('/api/products', (req, res) => {
       }
     });
 
-    // Sort by date descending
-    productos.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Status takes priority; manual weight controls order within each group.
+    productos.sort((a, b) => {
+      return getProductStatusRank(a) - getProductStatusRank(b)
+        || a.weight - b.weight
+        || new Date(b.date) - new Date(a.date)
+        || a.title.localeCompare(b.title);
+    });
     res.json(productos);
   } catch (error) {
     console.error('Error reading products:', error);
