@@ -7,8 +7,8 @@ categories: ["Furniture"]
 referenceUrl: "https://www.ikea.com/ca/en/p/smussla-nightstand-shelf-unit-white-10469493/"
 availableFrom: ""
 weight: 29
-sold: false
-onHold: true
+sold: true
+onHold: false
 ---
 Profondeur: 32 cm (12 5/8 ")
 Hauteur des pieds: 8 cm (3 1/8 ")

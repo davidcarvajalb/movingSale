@@ -4,10 +4,10 @@ price: 80
 date: 2026-06-16T18:44:13.176Z
 draft: false
 categories: ["Furniture"]
+weight: 2
 referenceUrl: "https://www.ikea.com/ca/en/p/kallax-shelf-unit-white-00275848/"
 availableFrom: ""
-weight: 2
-sold: false
+sold: true
 onHold: false
 ---
 Highly customized IKEA KALLAX storage unit (1x4) in white. It is in perfect condition and fits beautifully inside a closet or any tight space for maximum organization.

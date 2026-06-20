@@ -7,7 +7,7 @@ categories: ["Furniture"]
 referenceUrl: "https://www.jysk.ca/fr/caja-tall-cabinet-white.html"
 availableFrom: ""
 weight: 24
-sold: false
+sold: true
 onHold: false
 ---
 EN * 
