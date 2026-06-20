@@ -4,11 +4,11 @@ price: 35
 date: 2026-06-16T17:22:14.425Z
 draft: false
 categories: ["Storage"]
+weight: 14
 referenceUrl: "https://www.canadiantire.ca/fr/pdp/range-chauss-utilitaire-3-niv-vancouver-classics-espresso-4742613p.html?rq=rangement+chaussure"
 availableFrom: ""
-weight: 14
 sold: false
-onHold: false
+onHold: true
 ---
 Resin slat shelves hold up to 30 lbs. each. Iron frame construction for extra strength and versatility. Dimensions: 26.5" W x 12.2" D x 19.1" H
 *********************************************
